@@ -1,3 +1,50 @@
+.db-grid__wrap {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.db-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #334155;
+  font-size: 0.65rem;
+  margin: 0 auto;
+  min-width: max-content;
+  width: 100%;
+}
+
+.db-grid th,
+.db-grid td {
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+.db-grid__head {
+  border-bottom: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: none;
+}
+
+.db-grid__row td {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.db-grid__cell--text {
+  text-align: left;
+}
+
+.db-grid__cell--num {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.db-grid__cell--status {
+  text-align: center;
+}
+
 .alert-ok {
   color: #047857;
   background-color: rgba(16, 185, 129, 0.12);

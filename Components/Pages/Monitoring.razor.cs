@@ -214,6 +214,21 @@ public partial class Monitoring : ComponentBase
         return -1;
     }
 
+    private static string GetColumnAlignmentClass(string columnName)
+    {
+        if (columnName.Equals("FileGroup", StringComparison.OrdinalIgnoreCase))
+        {
+            return "db-grid__cell--text";
+        }
+
+        if (columnName.Equals("AlertLevel", StringComparison.OrdinalIgnoreCase))
+        {
+            return "db-grid__cell--status";
+        }
+
+        return "db-grid__cell--num";
+    }
+
     private sealed record DbCard(
         string Name,
         IReadOnlyList<string> Columns,

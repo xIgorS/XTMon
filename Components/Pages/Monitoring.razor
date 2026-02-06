@@ -46,25 +46,27 @@
                 {
                     <div class="stat-card">
                         <p class="stat-label">@card.Name</p>
-                        <div class="mt-4 overflow-x-auto">
-                            <table class="w-full text-left text-sm text-slate-700">
-                                <thead class="text-[0.6rem] tracking-[0.12em] text-slate-500">
+                        <div class="db-grid__wrap">
+                            <table class="db-grid">
+                                <thead>
                                     <tr>
                                         @foreach (var column in card.Columns)
                                         {
-                                            <th class="px-2 py-2 text-center">@ToHeaderLabel(column)</th>
+                                            <th class="db-grid__head @GetColumnAlignmentClass(column)">@ToHeaderLabel(column)</th>
                                         }
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-slate-200">
+                                <tbody>
                                     @foreach (var row in card.Rows)
                                     {
                                         var alertIndex = GetAlertColumnIndex(card.Columns);
                                         var rowAlertClass = alertIndex >= 0 ? GetAlertLevelClass(row[alertIndex]) : string.Empty;
-                                        <tr class="hover:bg-slate-50/80">
+                                        <tr class="db-grid__row">
                                             @for (var i = 0; i < row.Count; i++)
                                             {
-                                                <td class="px-2 py-2 text-center @rowAlertClass">@FormatCellValue(row[i])</td>
+                                                <td class="db-grid__cell @GetColumnAlignmentClass(card.Columns[i]) @rowAlertClass">
+                                                    @FormatCellValue(row[i])
+                                                </td>
                                             }
                                         </tr>
                                     }
