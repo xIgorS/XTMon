@@ -39,6 +39,47 @@
     </div>
 
     <div class="space-y-4">
+        @if (dbCards.Count > 0)
+        {
+            <div class="space-y-4">
+                @foreach (var card in dbCards)
+                {
+                    <div class="stat-card">
+                        <p class="stat-label">@card.Name</p>
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="w-full text-left text-sm text-slate-700">
+                                <thead class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-500">
+                                    <tr>
+                                        @foreach (var column in card.Columns)
+                                        {
+                                            <th class="px-2 py-2">@column</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200">
+                                    @foreach (var row in card.Rows)
+                                    {
+                                        <tr class="hover:bg-slate-50/80">
+                                            @for (var i = 0; i < row.Count; i++)
+                                            {
+                                                <td class="px-2 py-2">@(row[i] ?? "-")</td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else if (!isLoading && string.IsNullOrWhiteSpace(loadError) && result is not null && result.Rows.Count > 0)
+        {
+            <div class="surface">
+                <p class="muted">Database cards are unavailable because the DatabaseName column was not found.</p>
+            </div>
+        }
+
         @if (isLoading)
         {
             <div class="surface">
@@ -60,28 +101,8 @@
         }
         else
         {
-            <div class="surface overflow-x-auto">
-                <table class="w-full text-left text-sm text-slate-700">
-                    <thead class="text-xs uppercase tracking-[0.18em] text-slate-500">
-                        <tr>
-                            @foreach (var column in result.Columns)
-                            {
-                                <th class="px-3 py-2">@column</th>
-                            }
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200">
-                        @foreach (var row in result.Rows)
-                        {
-                            <tr class="hover:bg-slate-50/80">
-                                @for (var i = 0; i < row.Count; i++)
-                                {
-                                    <td class="px-3 py-3">@(row[i] ?? "-")</td>
-                                }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="surface">
+                <p class="muted">Database cards are shown above.</p>
             </div>
         }
     </div>
