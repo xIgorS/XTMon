@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Options;
+using System.Globalization;
 using System.Linq;
+using System.Text;
 using XTMon.Data;
 using XTMon.Models;
 using XTMon.Options;
@@ -10,6 +12,18 @@ namespace XTMon.Components.Pages;
 public partial class Monitoring : ComponentBase
 {
     private const string DatabaseNameColumn = "DatabaseName";
+    private static readonly string[] CardColumnOrder =
+    [
+        "FileGroup",
+        "AllocatedSpaceMB",
+        "UsedSpaceMB",
+        "FreeSpaceMB",
+        "Autogrow",
+        "FreeDriveMB",
+        "PartSizeMB",
+        "TotalFreeSpaceMB",
+        "AlertLevel"
+    ];
 
     [Inject]
     private DbMonitoringRepository Repository { get; set; } = default!;
@@ -66,9 +80,9 @@ public partial class Monitoring : ComponentBase
             return;
         }
 
-        var tableColumns = result.Columns
-            .Select((label, index) => new { label, index })
-            .Where(item => item.index != dbNameIndex)
+        var tableColumns = CardColumnOrder
+            .Select(column => new { column, index = FindColumnIndex(column) })
+            .Where(item => item.index >= 0)
             .ToList();
 
         dbCards = result.Rows
@@ -83,7 +97,7 @@ public partial class Monitoring : ComponentBase
                             .ToList())
                     .ToList();
 
-                return new DbCard(group.Key, tableColumns.Select(item => item.label).ToList(), rows);
+                return new DbCard(group.Key, tableColumns.Select(item => item.column).ToList(), rows);
             })
             .OrderBy(card => card.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -105,6 +119,70 @@ public partial class Monitoring : ComponentBase
         }
 
         return -1;
+    }
+
+    private static string ToHeaderLabel(string? columnName)
+    {
+        if (string.IsNullOrWhiteSpace(columnName))
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder(columnName.Length + 4);
+        for (var i = 0; i < columnName.Length; i++)
+        {
+            var current = columnName[i];
+            if (i > 0)
+            {
+                var previous = columnName[i - 1];
+                var next = i + 1 < columnName.Length ? columnName[i + 1] : '\0';
+                var boundary = char.IsUpper(current) &&
+                               (char.IsLower(previous) || (char.IsUpper(previous) && char.IsLower(next)));
+
+                if (boundary)
+                {
+                    builder.Append(' ');
+                }
+            }
+
+            builder.Append(current);
+        }
+
+        return builder.ToString();
+    }
+
+    private static string FormatCellValue(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "-";
+        }
+
+        if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var number))
+        {
+            return FormatWithSpaces(number);
+        }
+
+        return value;
+    }
+
+    private static string FormatWithSpaces(long value)
+    {
+        var negative = value < 0;
+        var digits = Math.Abs(value).ToString(CultureInfo.InvariantCulture);
+        var builder = new StringBuilder(digits.Length + digits.Length / 3 + 1);
+
+        for (var i = 0; i < digits.Length; i++)
+        {
+            if (i > 0 && (digits.Length - i) % 3 == 0)
+            {
+                builder.Append(' ');
+            }
+
+            builder.Append(digits[i]);
+        }
+
+        return negative ? "-" + builder : builder.ToString();
     }
 
     private sealed record DbCard(

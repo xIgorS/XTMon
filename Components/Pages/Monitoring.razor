@@ -48,11 +48,11 @@
                         <p class="stat-label">@card.Name</p>
                         <div class="mt-4 overflow-x-auto">
                             <table class="w-full text-left text-sm text-slate-700">
-                                <thead class="text-[0.65rem] uppercase tracking-[0.18em] text-slate-500">
+                                <thead class="text-[0.6rem] tracking-[0.12em] text-slate-500">
                                     <tr>
                                         @foreach (var column in card.Columns)
                                         {
-                                            <th class="px-2 py-2">@column</th>
+                                            <th class="px-2 py-2 text-center">@ToHeaderLabel(column)</th>
                                         }
                                     </tr>
                                 </thead>
@@ -62,7 +62,7 @@
                                         <tr class="hover:bg-slate-50/80">
                                             @for (var i = 0; i < row.Count; i++)
                                             {
-                                                <td class="px-2 py-2">@(row[i] ?? "-")</td>
+                                                <td class="px-2 py-2 text-center">@FormatCellValue(row[i])</td>
                                             }
                                         </tr>
                                     }
