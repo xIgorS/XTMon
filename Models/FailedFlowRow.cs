@@ -5,6 +5,7 @@ public sealed record FailedFlowRow(
     long? FlowIdDerivedFrom,
     short? BusinessDataTypeId,
     short? FeedSourceId,
+    string? FeedSourceName,
     DateOnly PnlDate,
     DateOnly? ReportingDate,
     string? FileName,

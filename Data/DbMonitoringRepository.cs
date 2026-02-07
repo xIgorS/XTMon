@@ -90,6 +90,7 @@ public sealed class DbMonitoringRepository
         var flowIdDerivedFromIndex = reader.GetOrdinal("FlowIdDerivedFrom");
         var businessDataTypeIdIndex = reader.GetOrdinal("BusinessDataTypeId");
         var feedSourceIdIndex = reader.GetOrdinal("FeedSourceId");
+        var feedSourceNameIndex = reader.GetOrdinal("FeedSourceName");
         var pnlDateIndex = reader.GetOrdinal("PnlDate");
         var reportingDateIndex = reader.GetOrdinal("ReportingDate");
         var fileNameIndex = reader.GetOrdinal("FileName");
@@ -109,6 +110,7 @@ public sealed class DbMonitoringRepository
             var flowIdDerivedFrom = reader.IsDBNull(flowIdDerivedFromIndex) ? (long?)null : reader.GetInt64(flowIdDerivedFromIndex);
             var businessDataTypeId = reader.IsDBNull(businessDataTypeIdIndex) ? (short?)null : reader.GetInt16(businessDataTypeIdIndex);
             var feedSourceId = reader.IsDBNull(feedSourceIdIndex) ? (short?)null : reader.GetInt16(feedSourceIdIndex);
+            var feedSourceName = reader.IsDBNull(feedSourceNameIndex) ? null : reader.GetString(feedSourceNameIndex);
             var pnlDateValue = DateOnly.FromDateTime(reader.GetDateTime(pnlDateIndex));
             var reportingDate = reader.IsDBNull(reportingDateIndex)
                 ? (DateOnly?)null
@@ -128,6 +130,7 @@ public sealed class DbMonitoringRepository
                 flowIdDerivedFrom,
                 businessDataTypeId,
                 feedSourceId,
+                feedSourceName,
                 pnlDateValue,
                 reportingDate,
                 fileName,

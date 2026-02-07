@@ -24,22 +24,48 @@
     </div>
 
     <div class="surface">
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end">
             <div class="flex flex-col gap-2">
                 <label class="text-xs uppercase tracking-[0.2em] text-slate-500" for="pnlDate">Pnl date</label>
-                  <input id="pnlDate"
-                      class="replay-input"
-                      type="text"
-                      placeholder="DD-MM-YYYY"
-                      @bind="PnlDateInput"
-                      @bind:event="oninput"
-                      @onkeydown="OnPnlDateKeyDown"
-                      @onblur="NormalizePnlDateInput"
-                      disabled="@isSubmitting" />
+                <input id="pnlDate"
+                       class="replay-input"
+                       type="text"
+                       placeholder="DD-MM-YYYY"
+                       @bind="PnlDateInput"
+                       @bind:event="oninput"
+                       @onkeydown="OnPnlDateKeyDown"
+                       @onblur="NormalizePnlDateInput"
+                       disabled="@isSubmitting" />
                 @if (!string.IsNullOrWhiteSpace(pnlDateError))
                 {
                     <p class="text-xs text-rose-700">@pnlDateError</p>
                 }
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs uppercase tracking-[0.2em] text-slate-500" for="feedSourceFilter">Feed source</label>
+                <select id="feedSourceFilter"
+                        class="replay-input"
+                        @bind="FeedSourceFilter"
+                        disabled="@isSubmitting">
+                    <option value="">All</option>
+                    @foreach (var option in GetFeedSourceOptions())
+                    {
+                        <option value="@option">@option</option>
+                    }
+                </select>
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-xs uppercase tracking-[0.2em] text-slate-500" for="typeOfCalculationFilter">Type of calculation</label>
+                <select id="typeOfCalculationFilter"
+                        class="replay-input"
+                        @bind="TypeOfCalculationFilter"
+                        disabled="@isSubmitting">
+                    <option value="">All</option>
+                    @foreach (var option in GetTypeOfCalculationOptions())
+                    {
+                        <option value="@option">@option</option>
+                    }
+                </select>
             </div>
         </div>
     </div>
@@ -90,6 +116,7 @@
         }
         else if (hasLoaded)
         {
+            var filteredRows = GetFilteredRows();
             <div class="surface">
                 <div class="db-grid__wrap">
                     <table class="db-grid">
@@ -99,7 +126,7 @@
                                 <th class="db-grid__head db-grid__cell--num">Flow Id</th>
                                 <th class="db-grid__head db-grid__cell--num">Derived From</th>
                                 <th class="db-grid__head db-grid__cell--num">Business Data Type</th>
-                                <th class="db-grid__head db-grid__cell--num">Feed Source</th>
+                                <th class="db-grid__head db-grid__cell--text">Feed Source</th>
                                 <th class="db-grid__head db-grid__cell--text">Pnl Date</th>
                                 <th class="db-grid__head db-grid__cell--text">Reporting Date</th>
                                 <th class="db-grid__head db-grid__cell--text">File Name</th>
@@ -114,15 +141,17 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @if (rows.Count == 0)
+                            @if (filteredRows.Count == 0)
                             {
                                 <tr class="db-grid__row">
-                                    <td class="db-grid__cell db-grid__cell--text" colspan="16">No failed flows found for the selected Pnl date.</td>
+                                    <td class="db-grid__cell db-grid__cell--text" colspan="16">
+                                        @(rows.Count == 0 ? "No failed flows found for the selected Pnl date." : "No rows match the current filters.")
+                                    </td>
                                 </tr>
                             }
                             else
                             {
-                                @foreach (var row in rows)
+                                @foreach (var row in filteredRows)
                                 {
                                     <tr class="db-grid__row">
                                         <td class="db-grid__cell db-grid__cell--checkbox">
@@ -131,7 +160,7 @@
                                         <td class="db-grid__cell db-grid__cell--num">@FormatNumber(row.Source.FlowId)</td>
                                         <td class="db-grid__cell db-grid__cell--num">@FormatNumber(row.Source.FlowIdDerivedFrom)</td>
                                         <td class="db-grid__cell db-grid__cell--num">@FormatNumber(row.Source.BusinessDataTypeId)</td>
-                                        <td class="db-grid__cell db-grid__cell--num">@FormatNumber(row.Source.FeedSourceId)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatText(row.Source.FeedSourceName)</td>
                                         <td class="db-grid__cell db-grid__cell--text">@FormatDate(row.Source.PnlDate)</td>
                                         <td class="db-grid__cell db-grid__cell--text">@FormatDate(row.Source.ReportingDate)</td>
                                         <td class="db-grid__cell db-grid__cell--text">@FormatText(row.Source.FileName)</td>

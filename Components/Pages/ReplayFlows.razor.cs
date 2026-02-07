@@ -24,6 +24,8 @@ public partial class ReplayFlows : ComponentBase
     private readonly List<ReplayFlowGridRow> rows = new();
     private readonly List<ReplayFlowResultRow> replayResults = new();
     private string pnlDateInput = string.Empty;
+    private string? feedSourceFilter;
+    private string? typeOfCalculationFilter;
     private string? pnlDateError;
     private bool isLoading;
     private bool isSubmitting;
@@ -57,7 +59,19 @@ public partial class ReplayFlows : ComponentBase
 
     private bool CanSubmit => !isSubmitting && !isLoading && SelectedRowsCount > 0;
 
-    private bool CanSelectAll => !isSubmitting && !isLoading && rows.Count > 0;
+    private bool CanSelectAll => !isSubmitting && !isLoading && GetFilteredRows().Count > 0;
+
+    private string? FeedSourceFilter
+    {
+        get => feedSourceFilter;
+        set => feedSourceFilter = value;
+    }
+
+    private string? TypeOfCalculationFilter
+    {
+        get => typeOfCalculationFilter;
+        set => typeOfCalculationFilter = value;
+    }
 
     private async Task ReloadAsync()
     {
@@ -188,10 +202,51 @@ public partial class ReplayFlows : ComponentBase
             return;
         }
 
-        foreach (var row in rows)
+        foreach (var row in GetFilteredRows())
         {
             row.IsSelected = true;
         }
+    }
+
+    private List<ReplayFlowGridRow> GetFilteredRows()
+    {
+        return rows
+            .Where(row => MatchesFilter(row.Source.FeedSourceName, feedSourceFilter))
+            .Where(row => MatchesFilter(row.Source.TypeOfCalculation, typeOfCalculationFilter))
+            .ToList();
+    }
+
+    private static bool MatchesFilter(string? value, string? filter)
+    {
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(value) &&
+               value.Equals(filter.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private IReadOnlyList<string> GetFeedSourceOptions()
+    {
+        return rows
+            .Select(row => row.Source.FeedSourceName)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private IReadOnlyList<string> GetTypeOfCalculationOptions()
+    {
+        return rows
+            .Select(row => row.Source.TypeOfCalculation)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Select(value => value!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private void NormalizePnlDateInput()
