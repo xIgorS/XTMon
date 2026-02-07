@@ -1,0 +1,158 @@
+@page "/replay-flows"
+@rendermode InteractiveServer
+
+<PageTitle>Replay Flows</PageTitle>
+
+<div class="space-y-6">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <p class="text-xs uppercase tracking-[0.2em] text-slate-500">Replay operations</p>
+            <h1 class="text-3xl font-semibold text-slate-900">Replay Flows</h1>
+            <p class="muted mt-1">Pull failed flows and submit replay requests.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button class="primary-button" @onclick="ReloadAsync" disabled="@(!IsPnlDateValid() || isLoading || isSubmitting)">
+                @(isLoading ? "Refreshing..." : "Refresh")
+            </button>
+            <button class="primary-button" @onclick="SubmitAsync" disabled="@(!CanSubmit)">
+                @(isSubmitting ? "Submitting..." : "Submit selected")
+            </button>
+        </div>
+    </div>
+
+    <div class="surface">
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+            <div class="flex flex-col gap-2">
+                <label class="text-xs uppercase tracking-[0.2em] text-slate-500" for="pnlDate">Pnl date</label>
+                  <input id="pnlDate"
+                      class="replay-input"
+                      type="text"
+                      placeholder="DD-MM-YYYY"
+                      @bind="PnlDateInput"
+                      @bind:event="oninput"
+                      @onkeydown="OnPnlDateKeyDown"
+                      @onblur="NormalizePnlDateInput"
+                      disabled="@isSubmitting" />
+                @if (!string.IsNullOrWhiteSpace(pnlDateError))
+                {
+                    <p class="text-xs text-rose-700">@pnlDateError</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="stat-card">
+            <p class="stat-label">Last refresh</p>
+            <p class="stat-value">@(lastRefresh?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Not loaded")</p>
+            <p class="muted mt-1">Local time</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">Rows</p>
+            <p class="stat-value">@rows.Count</p>
+            <p class="muted mt-1">From stored procedure</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">Pnl date</p>
+            <p class="stat-value">@(lastPnlDate?.ToString("dd-MM-yyyy") ?? "-")</p>
+            <p class="muted mt-1">Last requested</p>
+        </div>
+        <div class="stat-card">
+            <p class="stat-label">Status</p>
+            <p class="stat-value">@(string.IsNullOrWhiteSpace(loadError) ? "Ready" : "Error")</p>
+            <p class="muted mt-1">Connectivity</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(statusMessage))
+    {
+        <div class="surface @(statusIsError ? "border-rose-200 bg-rose-50/70" : "bg-emerald-100")">
+            <p class="text-sm font-semibold @(statusIsError ? "text-rose-700" : "text-emerald-700")">@statusMessage</p>
+        </div>
+    }
+
+    <div class="space-y-4">
+        @if (isLoading)
+        {
+            <div class="surface">
+                <p class="muted">Loading failed flows...</p>
+            </div>
+        }
+        else if (!string.IsNullOrWhiteSpace(loadError))
+        {
+            <div class="surface border-rose-200 bg-rose-50/70">
+                <p class="text-sm font-semibold text-rose-700">Failed to load replay flows.</p>
+                <p class="mt-2 text-sm text-rose-700">@loadError</p>
+            </div>
+        }
+        else if (hasLoaded)
+        {
+            <div class="surface">
+                <div class="db-grid__wrap">
+                    <table class="db-grid">
+                        <thead>
+                            <tr>
+                                <th class="db-grid__head db-grid__cell--checkbox">Select</th>
+                                <th class="db-grid__head db-grid__cell--num">Flow Id</th>
+                                <th class="db-grid__head db-grid__cell--num">Derived From</th>
+                                <th class="db-grid__head db-grid__cell--num">Business Data Type</th>
+                                <th class="db-grid__head db-grid__cell--num">Feed Source</th>
+                                <th class="db-grid__head db-grid__cell--text">Pnl Date</th>
+                                <th class="db-grid__head db-grid__cell--text">Reporting Date</th>
+                                <th class="db-grid__head db-grid__cell--text">File Name</th>
+                                <th class="db-grid__head db-grid__cell--text">Arrival Date</th>
+                                <th class="db-grid__head db-grid__cell--text">Package Guid</th>
+                                <th class="db-grid__head db-grid__cell--text">Current Step</th>
+                                <th class="db-grid__head db-grid__cell--text">Is Failed</th>
+                                <th class="db-grid__head db-grid__cell--text">Type Of Calculation</th>
+                                <th class="db-grid__head db-grid__cell--checkbox">With Backdated</th>
+                                <th class="db-grid__head db-grid__cell--checkbox">Skip Core Process</th>
+                                <th class="db-grid__head db-grid__cell--checkbox">Droptabletpm</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (rows.Count == 0)
+                            {
+                                <tr class="db-grid__row">
+                                    <td class="db-grid__cell db-grid__cell--text" colspan="16">No failed flows found for the selected Pnl date.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var row in rows)
+                                {
+                                    <tr class="db-grid__row">
+                                        <td class="db-grid__cell db-grid__cell--checkbox">
+                                            <input type="checkbox" class="replay-checkbox" @bind="row.IsSelected" disabled="@isSubmitting" />
+                                        </td>
+                                        <td class="db-grid__cell db-grid__cell--num">@FormatNumber(row.Source.FlowId)</td>
+                                        <td class="db-grid__cell db-grid__cell--num">@FormatNumber(row.Source.FlowIdDerivedFrom)</td>
+                                        <td class="db-grid__cell db-grid__cell--num">@FormatNumber(row.Source.BusinessDataTypeId)</td>
+                                        <td class="db-grid__cell db-grid__cell--num">@FormatNumber(row.Source.FeedSourceId)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatDate(row.Source.PnlDate)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatDate(row.Source.ReportingDate)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatText(row.Source.FileName)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatDate(row.Source.ArrivalDate)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatGuid(row.Source.PackageGuid)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatText(row.Source.CurrentStep)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatText(row.Source.IsFailed)</td>
+                                        <td class="db-grid__cell db-grid__cell--text">@FormatText(row.Source.TypeOfCalculation)</td>
+                                        <td class="db-grid__cell db-grid__cell--checkbox">
+                                            <input type="checkbox" class="replay-checkbox" checked="@row.Source.WithBackdated" disabled />
+                                        </td>
+                                        <td class="db-grid__cell db-grid__cell--checkbox">
+                                            <input type="checkbox" class="replay-checkbox" @bind="row.SkipCoreProcess" disabled="@(!row.IsSelected || isSubmitting)" />
+                                        </td>
+                                        <td class="db-grid__cell db-grid__cell--checkbox">
+                                            <input type="checkbox" class="replay-checkbox" @bind="row.Droptabletpm" disabled="@(!row.IsSelected || isSubmitting)" />
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>

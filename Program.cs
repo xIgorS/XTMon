@@ -9,6 +9,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.Configure<MonitoringOptions>(builder.Configuration.GetSection(MonitoringOptions.SectionName));
+builder.Services.Configure<ReplayFlowsOptions>(builder.Configuration.GetSection(ReplayFlowsOptions.SectionName));
 builder.Services.AddSingleton<SqlConnectionFactory>();
 builder.Services.AddScoped<DbMonitoringRepository>();
 
